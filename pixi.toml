@@ -55,7 +55,7 @@ build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release
 start-minio = "python automation/start_minio.py"
 
 # Java
-build-jni = "cargo build -p vegafusion-jni --release $0"
+build-jni = "cargo build -p vegafusion-jni --release $0 && ls -la target/release"
 build-jar = "cd java && ./gradlew jar"
 build-jar-win = "cd java && ./gradlew.bat jar"
 

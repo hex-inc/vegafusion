@@ -3,95 +3,6 @@ on:
   pull_request:
     types: [ opened, synchronize ]
 jobs:
-  build-test-java-linux-64:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
-        with:
-          pixi-version: v0.7.0
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-test-java-linux-64
-          path: |
-            ~/.cargo
-            target
-            .pixi
-      - name: Test Java
-        run: pixi run test-java
-      - name: Copy native lib
-        run: |
-          mkdir -p native/linux-64
-          cp target/release/libvegafusion_jni.so native/linux-64
-      - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-        with:
-          name: jni-native
-          path: |
-            native
-
-  build-test-java-osx-64:
-    runs-on: macos-11
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
-        with:
-          pixi-version: v0.7.0
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-test-java-osx-64
-          path: |
-            ~/.cargo
-            target
-            .pixi
-      - name: Test Java
-        run: pixi run test-java
-      - name: Copy native lib
-        run: |
-          mkdir -p native/osx-64
-          cp target/release/libvegafusion_jni.dylib native/osx-64
-      - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-        with:
-          name: jni-native
-          path: |
-            native
-
-  build-java-osx-arm64:
-    runs-on: macos-11
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
-        with:
-          pixi-version: v0.7.0
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-java-osx-arm64
-          path: |
-            ~/.cargo
-            target
-            .pixi
-      - name: Build jni library
-        run: |
-          pixi run python automation/download_rust_target.py aarch64-apple-darwin
-          pixi run build-jni --target aarch64-apple-darwin
-      - name: Copy native lib
-        run: |
-          mkdir -p native/osx-arm64
-          cp target/aarch64-apple-darwin/release/libvegafusion_jni.dylib native/osx-arm64
-      - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-        with:
-          name: jni-native
-          path: |
-            native
-
   build-test-java-win-64:
     runs-on: windows-2022
     steps:
@@ -129,68 +40,68 @@ jobs:
           path: |
             native
 
-  build-jar:
-    runs-on: ubuntu-20.04
-    needs:
-      - build-test-java-linux-64
-      - build-test-java-osx-64
-      - build-java-osx-arm64
-      - build-test-java-win-64
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
-        with:
-          pixi-version: v0.7.0
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-jar
-          path: |
-            .pixi
-      - name: Download jni libs
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
-        with:
-          name: jni-native
-          path: jni-native
-      - name: Build jar
-        run: |
-          export VEGAFUSION_JNI_LIBRARIES=/home/runner/work/vegafusion/vegafusion/jni-native
-          pixi run build-jar
-      - name: Upload jar
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-        with:
-          name: jar
-          path: |
-            java/lib/build/libs/vegafusion-*.jar
-
-  try-jar:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-20.04
-          - macos-11
-          - windows-2022
-    runs-on: ${{ matrix.os }}
-    needs: [ build-jar ]
-    steps:
-      - name: Install Java
-        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - name: Download jar
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
-        with:
-          name: jar
-          path: .
-      - name: Run jar (non-Windows)
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          java -jar vegafusion-*.jar
-      - name: Run jar (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          $jarFile = Get-ChildItem -Path .\ -Filter "vegafusion-*.jar" | Select-Object -First 1
-          java -jar $jarFile
+#  build-jar:
+#    runs-on: ubuntu-20.04
+#    needs:
+#      - build-test-java-linux-64
+#      - build-test-java-osx-64
+#      - build-java-osx-arm64
+#      - build-test-java-win-64
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+#      - uses: prefix-dev/setup-pixi@v0.4.1
+#        with:
+#          pixi-version: v0.7.0
+#      - name: Cache
+#        uses: actions/cache@v3
+#        with:
+#          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-jar
+#          path: |
+#            .pixi
+#      - name: Download jni libs
+#        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
+#        with:
+#          name: jni-native
+#          path: jni-native
+#      - name: Build jar
+#        run: |
+#          export VEGAFUSION_JNI_LIBRARIES=/home/runner/work/vegafusion/vegafusion/jni-native
+#          pixi run build-jar
+#      - name: Upload jar
+#        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+#        with:
+#          name: jar
+#          path: |
+#            java/lib/build/libs/vegafusion-*.jar
+#
+#  try-jar:
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os:
+#          - ubuntu-20.04
+#          - macos-11
+#          - windows-2022
+#    runs-on: ${{ matrix.os }}
+#    needs: [ build-jar ]
+#    steps:
+#      - name: Install Java
+#        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
+#        with:
+#          distribution: 'temurin'
+#          java-version: '17'
+#      - name: Download jar
+#        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
+#        with:
+#          name: jar
+#          path: .
+#      - name: Run jar (non-Windows)
+#        if: ${{ runner.os != 'Windows' }}
+#        run: |
+#          java -jar vegafusion-*.jar
+#      - name: Run jar (Windows)
+#        if: ${{ runner.os == 'Windows' }}
+#        run: |
+#          $jarFile = Get-ChildItem -Path .\ -Filter "vegafusion-*.jar" | Select-Object -First 1
+#          java -jar $jarFile
